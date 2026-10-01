@@ -1,0 +1,17 @@
+name: Build reutilizable
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        type: string
+        default: myapp
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir imagen Docker
+        run: docker build -t ${{ inputs.image-name }}:latest .

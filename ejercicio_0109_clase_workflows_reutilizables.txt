@@ -1,0 +1,27 @@
+## `workflow_reus.yml` (el reutilizable)
+
+Es una "función" de build que otros workflows pueden llamar.
+
+- `on: workflow_call` lo hace invocable desde otro workflow. Sin esto, no se puede usar con `uses:`.
+- `inputs.image-name` es un parámetro con valor por defecto (`myapp`).
+- Su único job hace checkout y `docker build` con ese nombre.
+
+No se ejecuta por sí solo, solo cuando alguien lo llama.
+
+## `ci-cd.yml` (el principal)
+
+Es el que se dispara (push a `main` o a mano) y orquesta todo:
+
+1. Job `test`: instala dependencias y ejecuta pytest en 3 versiones de Python. Además usa el secret y las variables globales.
+2. Job `build`: espera a que `test` pase (`needs: test`) y llama al reutilizable.
+
+## Cómo cumple cada punto
+
+| Requisito | Dónde se cumple |
+|---|---|
+| Variables de entorno globales | Bloque `env:` a nivel raíz de `ci-cd.yml` (`APP_NAME`, `LOG_LEVEL`), accesibles desde cualquier job y paso |
+| Tests en matriz de versiones de Python | `strategy.matrix.python-version` con 3.10, 3.11 y 3.12, usado en `setup-python` |
+| Token oculto en logs | `secrets.API_TOKEN` pasado por `env` en un paso. GitHub lo enmascara y en el log aparece `***` |
+| Llamar a un workflow reutilizable | Job `build` con `uses: ./.github/workflows/workflow_reus.yml`, que apunta al archivo con `workflow_call` |
+
+Para que funcione, solo falta crear el secret `API_TOKEN` en Settings → Secrets and variables → Actions.
